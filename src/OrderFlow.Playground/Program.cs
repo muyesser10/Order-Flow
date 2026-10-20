@@ -14,8 +14,18 @@ Console.WriteLine($"Stock: {stockQuantity}");
 Console.Write("Quantity: ");
 string? input = Console.ReadLine();
 if (int.TryParse(input, out int quantity))
+
 {
-    Console.WriteLine($"Quantity received: {quantity}");
+    if (quantity <= 0)
+    { Console.WriteLine("Quantity must be greater than zero."); }
+
+    else if (!isActive)
+    { Console.WriteLine("This product is not available.");}
+
+    else if (quantity > stockQuantity)
+    { Console.WriteLine($"Insufficient stock. Available: {stockQuantity}"); }
+
+    else { Console.WriteLine("Order is valid"); }
 }
 else
 {
