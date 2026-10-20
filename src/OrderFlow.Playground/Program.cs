@@ -25,7 +25,15 @@ if (int.TryParse(input, out int quantity))
     else if (quantity > stockQuantity)
     { Console.WriteLine($"Insufficient stock. Available: {stockQuantity}"); }
 
-    else { Console.WriteLine("Order is valid"); }
+    else
+    {
+        decimal subtotal = unitPrice * quantity;
+        decimal vatAmount = Math.Round(subtotal * VatRate, 2);
+        decimal total = subtotal + vatAmount;
+        Console.WriteLine($"Subtotal: {subtotal}");
+        Console.WriteLine($"VAT {VatRate:P0}: {vatAmount}");
+        Console.WriteLine($"Total: {total:N2}");
+    }
 }
 else
 {
