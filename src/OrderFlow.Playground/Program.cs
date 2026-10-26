@@ -13,6 +13,35 @@ foreach(Product product in catalog.Values)
     Console.WriteLine($"SKU: {product.Sku}, Name: {product.Name}, Price: {product.UnitPrice:N2} TL, Stock: {product.StockQuantity}");
 }
 
+var cart = new List<CartItem>();
+
+while(true)
+{
+    Console.Write("SKU (Press Enter to finish): ");
+    string? skuInput = Console.ReadLine();
+
+    if(string.IsNullOrWhiteSpace(skuInput))
+    {
+        break;
+    }
+
+    if(!catalog.TryGetValue(skuInput.Trim(), out Product? product))
+    {
+        Console.WriteLine("Product not found.");
+        continue;
+    }
+
+    if (!product.IsActive)
+    {
+        Console.WriteLine("This product is not available.");
+        continue;
+    }
+
+    Console.WriteLine($"Found: {product.Name}");
+}
+
+Console.WriteLine($"Items in cart: {cart.Count}");
+
 class Product
 {
     public string Sku {get; set;} ="";
@@ -20,4 +49,10 @@ class Product
     public decimal UnitPrice {get;set;}
     public int StockQuantity {get;set;}
     public bool IsActive {get;set;}
+}
+
+class CartItem
+{
+    public Product Product {get;set;} = null!;
+    public int Quantity {get;set;}
 }
