@@ -37,7 +37,30 @@ while(true)
         continue;
     }
 
-    Console.WriteLine($"Found: {product.Name}");
+    Console.Write("Quantity: ");
+
+    if (!int.TryParse(Console.ReadLine(), out int quantity))
+    {
+        Console.WriteLine("Please enter a valid number.");
+        continue;
+    }
+
+    if (quantity <= 0)
+    {
+        Console.WriteLine("Quantity must be greater than zero.");
+        continue;
+    }
+
+    if (quantity > product.StockQuantity)
+    {
+        Console.WriteLine($"Insufficient stock. Available quantity: {product.StockQuantity}");
+        continue;
+    }
+
+    cart.Add(new CartItem { Product = product, Quantity = quantity });
+    product.StockQuantity -= quantity;
+    Console.WriteLine($"Added: {quantity} x {product.Name}");
+
 }
 
 Console.WriteLine($"Items in cart: {cart.Count}");
