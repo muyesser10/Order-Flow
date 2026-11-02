@@ -100,7 +100,7 @@ else if (string.Equals(discountInput.Trim(), WelcomeCode, StringComparison.Ordin
 }
 else
 {
-    Console.WriteLine("Invalid discount code.No discount applied.");
+    Console.WriteLine("Invalid discount code. No discount applied.");
     discountRate = 0m;
 }
 
