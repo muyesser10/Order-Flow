@@ -1,4 +1,8 @@
-﻿var catalog = new Dictionary<string, Product>(StringComparer.OrdinalIgnoreCase)
+﻿const decimal VatRate = 0.20m;
+const string WelcomeCode = "WELCOME10";
+const decimal WelcomeDiscountRate = 0.10m;
+
+var catalog = new Dictionary<string, Product>(StringComparer.OrdinalIgnoreCase)
 {
     ["COF-001"] = new Product { Sku = "COF-001", Name = "Filter Coffee", UnitPrice = 189.90m, StockQuantity = 42, IsActive = true },
     ["TEA-001"] = new Product { Sku = "TEA-001", Name = "Green Tea", UnitPrice = 64.50m, StockQuantity = 10, IsActive = true },
@@ -81,6 +85,45 @@ for (int i = 0; i < cart.Count; i++)
 }
 
 Console.WriteLine($"Subtotal: {subtotal:N2} TL");
+
+Console.Write("Discount code (press Enter to skip): ");
+string? discountInput = Console.ReadLine();
+
+decimal discountRate;
+if (string.IsNullOrWhiteSpace(discountInput))
+{
+    discountRate = 0m;
+}
+else if (string.Equals(discountInput.Trim(), WelcomeCode, StringComparison.OrdinalIgnoreCase))
+{
+    discountRate = WelcomeDiscountRate;
+}
+else
+{
+    Console.WriteLine("Invalid discount code.No discount applied.");
+    discountRate = 0m;
+}
+
+decimal discountAmount = Math.Round(subtotal * discountRate, 2, MidpointRounding.AwayFromZero);
+decimal discountedSubtotal = subtotal - discountAmount;
+
+decimal shippingFee = discountedSubtotal switch
+{
+    >= 1000 => 0m,
+    >= 500 => 29.90m,
+    _ => 49.90m
+};
+
+decimal vatAmount = Math.Round(discountedSubtotal * VatRate, 2, MidpointRounding.AwayFromZero);
+decimal total = discountedSubtotal + shippingFee + vatAmount;
+
+if (discountAmount > 0)
+{
+    Console.WriteLine($"Discount: -{discountAmount:N2} TL");
+}
+Console.WriteLine($"Shipping Fee: {shippingFee:N2} TL");
+Console.WriteLine($"VAT ({VatRate:P0}): {vatAmount:N2} TL");
+Console.WriteLine($"Total: {total:N2} TL");
 
 class Product
 {
