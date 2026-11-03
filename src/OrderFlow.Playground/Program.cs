@@ -114,16 +114,28 @@ decimal shippingFee = discountedSubtotal switch
     _ => 49.90m
 };
 
-decimal vatAmount = Math.Round(discountedSubtotal * VatRate, 2, MidpointRounding.AwayFromZero);
+decimal vatAmount = CalculateVat(discountedSubtotal);
 decimal total = discountedSubtotal + shippingFee + vatAmount;
 
 if (discountAmount > 0)
 {
     Console.WriteLine($"Discount: -{discountAmount:N2} TL");
 }
-Console.WriteLine($"Shipping Fee: {shippingFee:N2} TL");
+PrintMoneyLine("Shipping Fee", shippingFee);
 Console.WriteLine($"VAT ({VatRate:P0}): {vatAmount:N2} TL");
-Console.WriteLine($"Total: {total:N2} TL");
+PrintMoneyLine("Total", total);
+
+
+decimal CalculateVat(decimal amount)
+{
+    return Math.Round(amount * VatRate, 2, MidpointRounding.AwayFromZero);
+}
+
+
+void PrintMoneyLine(string label, decimal amount)
+{
+    Console.WriteLine($"{label}: {amount:N2} TL");
+}
 
 class Product
 {
