@@ -61,7 +61,7 @@ while (true)
         continue;
     }
 
-    cart.Add(new CartItem { Product = product, Quantity = quantity });
+    cart.Add(new CartItem(product, quantity));
     Console.WriteLine($"Added: {quantity} x {product.Name}");
 
 }
@@ -193,6 +193,17 @@ class Product
 
 class CartItem
 {
-    public Product Product { get; set; } = null!;
-    public int Quantity { get; set; }
+    public Product Product { get; }
+    public int Quantity { get; }
+
+    public CartItem(Product product, int quantity)
+    {
+        if (quantity <= 0)
+        {
+            throw new ArgumentException("Quantity must be greater than zero.");
+        }
+
+        Product = product;
+        Quantity = quantity;
+    }
 }
