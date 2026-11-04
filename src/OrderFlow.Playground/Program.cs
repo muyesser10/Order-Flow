@@ -4,10 +4,10 @@ const decimal WelcomeDiscountRate = 0.10m;
 
 var catalog = new Dictionary<string, Product>(StringComparer.OrdinalIgnoreCase)
 {
-    ["COF-001"] = new Product { Sku = "COF-001", Name = "Filter Coffee", UnitPrice = 189.90m, StockQuantity = 42, IsActive = true },
-    ["TEA-001"] = new Product { Sku = "TEA-001", Name = "Green Tea", UnitPrice = 64.50m, StockQuantity = 10, IsActive = true },
-    ["CRO-001"] = new Product { Sku = "CRO-001", Name = "Croissant", UnitPrice = 45.00m, StockQuantity = 0, IsActive = true },
-    ["MUG-001"] = new Product { Sku = "MUG-001", Name = "Ceramic Mug", UnitPrice = 249.00m, StockQuantity = 5, IsActive = false }
+    ["COF-001"] = new Product(sku: "COF-001", name: "Filter Coffee", unitPrice: 189.90m, stockQuantity: 42, isActive: true),
+    ["TEA-001"] = new Product(sku: "TEA-001", name: "Green Tea", unitPrice: 64.50m, stockQuantity: 10, isActive: true),
+    ["CRO-001"] = new Product(sku: "CRO-001", name: "Croissant", unitPrice: 45.00m, stockQuantity: 0, isActive: true),
+    ["MUG-001"] = new Product(sku: "MUG-001", name: "Ceramic Mug", unitPrice: 249.00m, stockQuantity: 5, isActive: false)
 };
 
 Console.WriteLine("====Catalog====");
@@ -55,14 +55,13 @@ while (true)
         continue;
     }
 
-    if (quantity > product.StockQuantity)
+    if(!product.TryDecreaseStock(quantity))
     {
         Console.WriteLine($"Insufficient stock. Available quantity: {product.StockQuantity}");
         continue;
     }
 
     cart.Add(new CartItem { Product = product, Quantity = quantity });
-    product.StockQuantity -= quantity;
     Console.WriteLine($"Added: {quantity} x {product.Name}");
 
 }
@@ -142,12 +141,37 @@ class Product
     public string Sku { get; set; } = "";
     public string Name { get; set; } = "";
     public decimal UnitPrice { get; set; }
-    public int StockQuantity { get; set; }
+    public int StockQuantity { get; private set; }
     public bool IsActive { get; set; }
+
+    public Product(string sku, string name, decimal unitPrice, int stockQuantity, bool isActive)
+{
+    if (stockQuantity < 0)
+    {
+        throw new ArgumentException("Stock quantity cannot be negative.");
+    }
+
+    Sku = sku;
+    Name = name;
+    UnitPrice = unitPrice;
+    StockQuantity = stockQuantity;
+    IsActive = isActive;
+}
 
     public string GetDisplayText()
     {
         return $"SKU: {Sku}, Name: {Name}, Price: {UnitPrice:N2} TL, Stock: {StockQuantity}";
+    }
+
+    public bool TryDecreaseStock(int quantity)
+    {
+        if (quantity <= 0 || quantity > StockQuantity)
+        {
+            return false;
+        }
+
+        StockQuantity -= quantity;
+        return true;
     }
 
 }
