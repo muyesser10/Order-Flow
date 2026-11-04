@@ -14,7 +14,7 @@ Console.WriteLine("====Catalog====");
 
 foreach (Product product in catalog.Values)
 {
-    Console.WriteLine($"SKU: {product.Sku}, Name: {product.Name}, Price: {product.UnitPrice:N2} TL, Stock: {product.StockQuantity}");
+    Console.WriteLine(product.GetDisplayText());
 }
 
 var cart = new List<CartItem>();
@@ -144,6 +144,12 @@ class Product
     public decimal UnitPrice { get; set; }
     public int StockQuantity { get; set; }
     public bool IsActive { get; set; }
+
+    public string GetDisplayText()
+    {
+        return $"SKU: {Sku}, Name: {Name}, Price: {UnitPrice:N2} TL, Stock: {StockQuantity}";
+    }
+
 }
 
 class CartItem
