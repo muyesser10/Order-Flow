@@ -138,17 +138,32 @@ void PrintMoneyLine(string label, decimal amount)
 
 class Product
 {
-    public string Sku { get; set; } = "";
-    public string Name { get; set; } = "";
-    public decimal UnitPrice { get; set; }
+    public string Sku { get; }
+    public string Name { get; }
+    public decimal UnitPrice { get; }
     public int StockQuantity { get; private set; }
-    public bool IsActive { get; set; }
+    public bool IsActive { get; }
 
     public Product(string sku, string name, decimal unitPrice, int stockQuantity, bool isActive)
 {
     if (stockQuantity < 0)
     {
         throw new ArgumentException("Stock quantity cannot be negative.");
+    }
+
+    if (string.IsNullOrWhiteSpace(sku))
+    {
+        throw new ArgumentException("SKU cannot be empty.");
+    }
+
+    if (string.IsNullOrWhiteSpace(name))
+    {
+        throw new ArgumentException("Name cannot be empty.");
+    }
+
+    if (unitPrice <= 0)
+    {
+        throw new ArgumentException("Unit price must be greater than zero.");
     }
 
     Sku = sku;
