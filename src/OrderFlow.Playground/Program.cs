@@ -78,7 +78,7 @@ decimal subtotal = 0m;
 for (int i = 0; i < cart.Count; i++)
 {
     CartItem cartItem = cart[i];
-    decimal lineTotal = cartItem.Product.UnitPrice * cartItem.Quantity;
+    decimal lineTotal = cartItem.LineTotal;
     subtotal += lineTotal;
     Console.WriteLine($"{i + 1}. {cartItem.Product.Name} - {cartItem.Quantity} x {cartItem.Product.UnitPrice:N2} TL = {lineTotal:N2} TL");
 }
@@ -206,4 +206,9 @@ class CartItem
         Product = product;
         Quantity = quantity;
     }
+
+    public decimal LineTotal => Product.UnitPrice * Quantity;
+
+
+
 }
