@@ -1,6 +1,4 @@
 ﻿const decimal VatRate = 0.20m;
-const string WelcomeCode = "WELCOME10";
-const decimal WelcomeDiscountRate = 0.10m;
 
 var catalog = new Dictionary<string, Product>(StringComparer.OrdinalIgnoreCase)
 {
@@ -8,6 +6,12 @@ var catalog = new Dictionary<string, Product>(StringComparer.OrdinalIgnoreCase)
     ["TEA-001"] = new Product(sku: "TEA-001", name: "Green Tea", unitPrice: 64.50m, stockQuantity: 10, isActive: true),
     ["CRO-001"] = new Product(sku: "CRO-001", name: "Croissant", unitPrice: 45.00m, stockQuantity: 0, isActive: true),
     ["MUG-001"] = new Product(sku: "MUG-001", name: "Ceramic Mug", unitPrice: 249.00m, stockQuantity: 5, isActive: false)
+};
+
+var discounts = new Dictionary<string, IDiscount>(StringComparer.OrdinalIgnoreCase)
+{
+    ["WELCOME10"] = new PercentageDiscount(0.10m),
+    ["FLAT50"] = new FixedAmountDiscount(50m)
 };
 
 Console.WriteLine("====Catalog====");
@@ -88,22 +92,20 @@ Console.WriteLine($"Subtotal: {subtotal:N2} TL");
 Console.Write("Discount code (press Enter to skip): ");
 string? discountInput = Console.ReadLine();
 
-decimal discountRate;
-if (string.IsNullOrWhiteSpace(discountInput))
+decimal discountAmount = 0m;
+
+if (!string.IsNullOrWhiteSpace(discountInput))
 {
-    discountRate = 0m;
-}
-else if (string.Equals(discountInput.Trim(), WelcomeCode, StringComparison.OrdinalIgnoreCase))
-{
-    discountRate = WelcomeDiscountRate;
-}
-else
-{
-    Console.WriteLine("Invalid discount code. No discount applied.");
-    discountRate = 0m;
+    if (discounts.TryGetValue(discountInput.Trim(), out IDiscount? discount))
+    {
+        discountAmount = discount.CalculateDiscount(subtotal);
+    }
+    else
+    {
+        Console.WriteLine("Invalid discount code. No discount applied.");
+    }
 }
 
-decimal discountAmount = Math.Round(subtotal * discountRate, 2, MidpointRounding.AwayFromZero);
 decimal discountedSubtotal = subtotal - discountAmount;
 
 decimal shippingFee = discountedSubtotal switch
@@ -209,6 +211,48 @@ class CartItem
 
     public decimal LineTotal => Product.UnitPrice * Quantity;
 
+}
 
+interface IDiscount
+{
+    decimal CalculateDiscount(decimal subtotal);
+}
+
+class PercentageDiscount: IDiscount
+{
+    public decimal Rate { get; }
+
+    public PercentageDiscount(decimal rate)
+    {
+        if (rate < 0 || rate > 1)
+        {
+            throw new ArgumentException("Discount rate must be between 0 and 1.");
+        }
+
+        Rate = rate;
+    }
+    public decimal CalculateDiscount(decimal subtotal)
+    {
+        return Math.Round(subtotal * Rate, 2, MidpointRounding.AwayFromZero);
+    }
+}
+
+class FixedAmountDiscount: IDiscount
+{
+    public decimal Amount {get; }
+
+    public FixedAmountDiscount(decimal amount)
+    { 
+        if (amount <= 0)
+        {
+        throw new ArgumentException("Discount amount must be greater than zero.");
+        }
+        Amount = amount;
+    }
+
+    public decimal CalculateDiscount(decimal subtotal)
+    {
+        return Math.Min(Amount, subtotal);
+    }
 
 }
