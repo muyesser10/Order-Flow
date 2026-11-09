@@ -11,7 +11,8 @@ var catalog = new Dictionary<string, Product>(StringComparer.OrdinalIgnoreCase)
 var discounts = new Dictionary<string, IDiscount>(StringComparer.OrdinalIgnoreCase)
 {
     ["WELCOME10"] = new PercentageDiscount(0.10m),
-    ["FLAT50"] = new FixedAmountDiscount(50m)
+    ["FLAT50"] = new FixedAmountDiscount(50m),
+    ["BIG20"] = new MinimumSubtotalDiscount(0.20m, 1000m)
 };
 
 Console.WriteLine("====Catalog====");
@@ -231,10 +232,36 @@ class PercentageDiscount: IDiscount
 
         Rate = rate;
     }
-    public decimal CalculateDiscount(decimal subtotal)
+    public virtual decimal CalculateDiscount(decimal subtotal)
     {
         return Math.Round(subtotal * Rate, 2, MidpointRounding.AwayFromZero);
     }
+}
+
+class MinimumSubtotalDiscount : PercentageDiscount
+{
+    public decimal MinimumSubTotal{ get; }
+
+    public MinimumSubtotalDiscount(decimal rate, decimal minimumSubTotal) : base(rate)
+    {
+        if (minimumSubTotal < 0)
+        {
+            throw new ArgumentException("Minimum subtotal must be greater than or equal to zero.");
+        }
+
+        MinimumSubTotal = minimumSubTotal;
+    }
+
+    public override decimal CalculateDiscount(decimal subtotal)
+    {
+        if (subtotal < MinimumSubTotal)
+        {
+            return 0m;
+        }
+
+        return base.CalculateDiscount(subtotal);
+    }
+
 }
 
 class FixedAmountDiscount: IDiscount
