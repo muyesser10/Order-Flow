@@ -60,7 +60,7 @@ while (true)
         continue;
     }
 
-    if(!product.TryDecreaseStock(quantity))
+    if (!product.TryDecreaseStock(quantity))
     {
         Console.WriteLine($"Insufficient stock. Available quantity: {product.StockQuantity}");
         continue;
@@ -148,33 +148,33 @@ class Product
     public bool IsActive { get; }
 
     public Product(string sku, string name, decimal unitPrice, int stockQuantity, bool isActive)
-{
-    if (stockQuantity < 0)
     {
-        throw new ArgumentException("Stock quantity cannot be negative.");
-    }
+        if (stockQuantity < 0)
+        {
+            throw new ArgumentException("Stock quantity cannot be negative.");
+        }
 
-    if (string.IsNullOrWhiteSpace(sku))
-    {
-        throw new ArgumentException("SKU cannot be empty.");
-    }
+        if (string.IsNullOrWhiteSpace(sku))
+        {
+            throw new ArgumentException("SKU cannot be empty.");
+        }
 
-    if (string.IsNullOrWhiteSpace(name))
-    {
-        throw new ArgumentException("Name cannot be empty.");
-    }
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("Name cannot be empty.");
+        }
 
-    if (unitPrice <= 0)
-    {
-        throw new ArgumentException("Unit price must be greater than zero.");
-    }
+        if (unitPrice <= 0)
+        {
+            throw new ArgumentException("Unit price must be greater than zero.");
+        }
 
-    Sku = sku;
-    Name = name;
-    UnitPrice = unitPrice;
-    StockQuantity = stockQuantity;
-    IsActive = isActive;
-}
+        Sku = sku;
+        Name = name;
+        UnitPrice = unitPrice;
+        StockQuantity = stockQuantity;
+        IsActive = isActive;
+    }
 
     public string GetDisplayText()
     {
@@ -219,67 +219,77 @@ interface IDiscount
     decimal CalculateDiscount(decimal subtotal);
 }
 
-class PercentageDiscount: IDiscount
+abstract class DiscountBase : IDiscount
+{
+    public decimal CalculateDiscount(decimal subtotal)
+    {
+        decimal rawDiscount = CalculateRawDiscount(subtotal);
+        decimal cappedDiscount = Math.Min(rawDiscount, subtotal);
+        return Math.Round(cappedDiscount, 2, MidpointRounding.AwayFromZero);
+    }
+    protected abstract decimal CalculateRawDiscount(decimal subtotal);
+}
+
+class PercentageDiscount : DiscountBase
 {
     public decimal Rate { get; }
 
     public PercentageDiscount(decimal rate)
     {
-        if (rate < 0 || rate > 1)
+        if (rate <= 0 || rate >= 1)
         {
             throw new ArgumentException("Discount rate must be between 0 and 1.");
         }
 
         Rate = rate;
     }
-    public virtual decimal CalculateDiscount(decimal subtotal)
+    protected override decimal CalculateRawDiscount(decimal subtotal)
     {
-        return Math.Round(subtotal * Rate, 2, MidpointRounding.AwayFromZero);
+        return subtotal * Rate;
     }
 }
 
 class MinimumSubtotalDiscount : PercentageDiscount
 {
-    public decimal MinimumSubTotal{ get; }
+    public decimal MinimumSubtotal { get; }
 
-    public MinimumSubtotalDiscount(decimal rate, decimal minimumSubTotal) : base(rate)
+    public MinimumSubtotalDiscount(decimal rate, decimal minimumSubtotal) : base(rate)
     {
-        if (minimumSubTotal < 0)
+        if (minimumSubtotal <= 0)
         {
-            throw new ArgumentException("Minimum subtotal must be greater than or equal to zero.");
+            throw new ArgumentException("Minimum subtotal must be greater than zero.");
         }
 
-        MinimumSubTotal = minimumSubTotal;
+        MinimumSubtotal = minimumSubtotal;
     }
 
-    public override decimal CalculateDiscount(decimal subtotal)
+    protected override decimal CalculateRawDiscount(decimal subtotal)
     {
-        if (subtotal < MinimumSubTotal)
+        if (subtotal < MinimumSubtotal)
         {
             return 0m;
         }
 
-        return base.CalculateDiscount(subtotal);
+        return base.CalculateRawDiscount(subtotal);
     }
 
 }
 
-class FixedAmountDiscount: IDiscount
+class FixedAmountDiscount : DiscountBase
 {
-    public decimal Amount {get; }
+    public decimal Amount { get; }
 
     public FixedAmountDiscount(decimal amount)
-    { 
+    {
         if (amount <= 0)
         {
-        throw new ArgumentException("Discount amount must be greater than zero.");
+            throw new ArgumentException("Discount amount must be greater than zero.");
         }
         Amount = amount;
     }
 
-    public decimal CalculateDiscount(decimal subtotal)
+    protected override decimal CalculateRawDiscount(decimal subtotal)
     {
-        return Math.Min(Amount, subtotal);
+        return Amount;
     }
-
 }
