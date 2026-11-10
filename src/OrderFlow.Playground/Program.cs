@@ -2,10 +2,10 @@
 
 var catalog = new Dictionary<string, Product>(StringComparer.OrdinalIgnoreCase)
 {
-    ["COF-001"] = new Product(sku: "COF-001", name: "Filter Coffee", unitPrice: 189.90m, stockQuantity: 42, isActive: true),
-    ["TEA-001"] = new Product(sku: "TEA-001", name: "Green Tea", unitPrice: 64.50m, stockQuantity: 10, isActive: true),
-    ["CRO-001"] = new Product(sku: "CRO-001", name: "Croissant", unitPrice: 45.00m, stockQuantity: 0, isActive: true),
-    ["MUG-001"] = new Product(sku: "MUG-001", name: "Ceramic Mug", unitPrice: 249.00m, stockQuantity: 5, isActive: false)
+    ["COF-001"] = new Product(sku: "COF-001", name: "Filter Coffee", unitPrice: 189.90m, stockQuantity: 42, isActive: true, category: ProductCategory.Coffee),
+    ["TEA-001"] = new Product(sku: "TEA-001", name: "Green Tea", unitPrice: 64.50m, stockQuantity: 10, isActive: true, category: ProductCategory.Tea),
+    ["CRO-001"] = new Product(sku: "CRO-001", name: "Croissant", unitPrice: 45.00m, stockQuantity: 0, isActive: true, category: ProductCategory.Bakery),
+    ["MUG-001"] = new Product(sku: "MUG-001", name: "Ceramic Mug", unitPrice: 249.00m, stockQuantity: 5, isActive: false, category: ProductCategory.Merchandise)
 };
 
 var discounts = new Dictionary<string, IDiscount>(StringComparer.OrdinalIgnoreCase)
@@ -146,8 +146,9 @@ class Product
     public decimal UnitPrice { get; }
     public int StockQuantity { get; private set; }
     public bool IsActive { get; }
+    public ProductCategory Category { get; }
 
-    public Product(string sku, string name, decimal unitPrice, int stockQuantity, bool isActive)
+    public Product(string sku, string name, decimal unitPrice, int stockQuantity, bool isActive, ProductCategory category)
     {
         if (stockQuantity < 0)
         {
@@ -174,11 +175,12 @@ class Product
         UnitPrice = unitPrice;
         StockQuantity = stockQuantity;
         IsActive = isActive;
+        Category = category;
     }
 
     public string GetDisplayText()
     {
-        return $"SKU: {Sku}, Name: {Name}, Price: {UnitPrice:N2} TL, Stock: {StockQuantity}";
+        return $"SKU: {Sku}, Name: {Name}, Price: {UnitPrice:N2} TL, Stock: {StockQuantity}, Category: {Category}";
     }
 
     public bool TryDecreaseStock(int quantity)
@@ -292,4 +294,12 @@ class FixedAmountDiscount : DiscountBase
     {
         return Amount;
     }
+}
+
+enum ProductCategory
+{
+    Coffee,
+    Tea,
+    Bakery,
+    Merchandise
 }
