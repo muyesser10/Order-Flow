@@ -106,26 +106,15 @@ if (!string.IsNullOrWhiteSpace(discountInput))
         Console.WriteLine("Invalid discount code. No discount applied.");
     }
 }
-
-decimal discountedSubtotal = subtotal - discountAmount;
-
-decimal shippingFee = discountedSubtotal switch
-{
-    >= 1000 => 0m,
-    >= 500 => 29.90m,
-    _ => 49.90m
-};
-
-decimal vatAmount = CalculateVat(discountedSubtotal);
-decimal total = discountedSubtotal + shippingFee + vatAmount;
+CheckoutSummary summary = CalculateCheckout(subtotal, discountAmount);
 
 if (discountAmount > 0)
 {
-    Console.WriteLine($"Discount: -{discountAmount:N2} TL");
+    Console.WriteLine($"Discount: -{summary.Discount:N2} TL");
 }
-PrintMoneyLine("Shipping Fee", shippingFee);
-Console.WriteLine($"VAT ({VatRate:P0}): {vatAmount:N2} TL");
-PrintMoneyLine("Total", total);
+PrintMoneyLine("Shipping Fee", summary.ShippingFee);
+Console.WriteLine($"VAT ({VatRate:P0}): {summary.Vat:N2} TL");
+PrintMoneyLine("Total", summary.Total);
 
 
 decimal CalculateVat(decimal amount)
@@ -137,6 +126,22 @@ decimal CalculateVat(decimal amount)
 void PrintMoneyLine(string label, decimal amount)
 {
     Console.WriteLine($"{label}: {amount:N2} TL");
+}
+
+CheckoutSummary CalculateCheckout(decimal subtotal, decimal discountAmount)
+{
+    decimal discountedSubtotal = subtotal - discountAmount;
+
+    decimal shippingFee = discountedSubtotal switch
+    {
+        >= 1000 => 0m,
+        >= 500 => 29.90m,
+        _ => 49.90m
+    };
+
+    decimal vatAmount = CalculateVat(discountedSubtotal);
+
+    return new CheckoutSummary(subtotal, discountAmount, shippingFee, vatAmount);
 }
 
 class Product
@@ -302,4 +307,9 @@ enum ProductCategory
     Tea,
     Bakery,
     Merchandise
+}
+record CheckoutSummary(decimal Subtotal, decimal Discount, decimal ShippingFee, decimal Vat)
+{
+    public decimal DiscountedSubtotal => Subtotal - Discount;
+    public decimal Total => DiscountedSubtotal + ShippingFee + Vat;
 }
