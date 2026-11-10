@@ -34,7 +34,8 @@ while (true)
         break;
     }
 
-    if (!catalog.TryGetValue(skuInput.Trim(), out Product? product))
+    Product? product = FindByCode(catalog, skuInput);
+    if (product == null)
     {
         Console.WriteLine("Product not found.");
         continue;
@@ -97,7 +98,8 @@ decimal discountAmount = 0m;
 
 if (!string.IsNullOrWhiteSpace(discountInput))
 {
-    if (discounts.TryGetValue(discountInput.Trim(), out IDiscount? discount))
+    IDiscount? discount = FindByCode(discounts, discountInput);
+    if (discount != null)
     {
         discountAmount = discount.CalculateDiscount(subtotal);
     }
@@ -120,6 +122,16 @@ PrintMoneyLine("Total", summary.Total);
 decimal CalculateVat(decimal amount)
 {
     return Math.Round(amount * VatRate, 2, MidpointRounding.AwayFromZero);
+}
+
+T? FindByCode<T>(Dictionary<string, T> source, string input) where T : class
+{
+    if (source.TryGetValue(input.Trim(), out T? value))
+    {
+        return value;
+    }
+
+    return null;
 }
 
 
