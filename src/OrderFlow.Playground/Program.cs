@@ -79,15 +79,16 @@ if (cart.Count == 0)
 }
 
 Console.WriteLine("===Your Cart===");
-decimal subtotal = 0m;
+
 
 for (int i = 0; i < cart.Count; i++)
 {
     CartItem cartItem = cart[i];
     decimal lineTotal = cartItem.LineTotal;
-    subtotal += lineTotal;
     Console.WriteLine($"{i + 1}. {cartItem.Product.Name} - {cartItem.Quantity} x {cartItem.Product.UnitPrice:N2} TL = {lineTotal:N2} TL");
 }
+
+decimal subtotal = cart.Sum(item => item.LineTotal);
 
 Console.WriteLine($"Subtotal: {subtotal:N2} TL");
 
