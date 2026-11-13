@@ -1,0 +1,5 @@
+SKU,Name,UnitPrice,StockQuantity,IsActive,Category
+CHA-001,Chai Latte Mix,99.90,20,true,Tea
+BAD-002,Broken Price,-5,10,true,Coffee
+COO-001,Cookie,abc,30,true,Bakery
+BAG-001,Tote Bag,149.00,8,true,Merchandise

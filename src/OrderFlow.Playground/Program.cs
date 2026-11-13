@@ -1,4 +1,6 @@
-﻿const decimal VatRate = 0.20m;
+﻿using System.Globalization;
+
+const decimal VatRate = 0.20m;
 
 var catalog = new Dictionary<string, Product>(StringComparer.OrdinalIgnoreCase)
 {
@@ -15,6 +17,15 @@ var discounts = new Dictionary<string, IDiscount>(StringComparer.OrdinalIgnoreCa
     ["FLAT50"] = new FixedAmountDiscount(50m),
     ["BIG20"] = new MinimumSubtotalDiscount(0.20m, 1000m)
 };
+
+try
+{
+    await ImportProductsAsync("products.csv", catalog);
+}
+catch (FileNotFoundException)
+{
+    Console.WriteLine("Supplier file not found. Continuing with the existing catalog.");
+}
 
 Console.WriteLine("====Catalog====");
 
@@ -157,6 +168,38 @@ T? FindByCode<T>(Dictionary<string, T> source, string input) where T : class
     }
 
     return null;
+}
+
+async Task ImportProductsAsync(string path, Dictionary<string, Product> catalog)
+{
+    string[] lines = await File.ReadAllLinesAsync(path);
+
+    foreach (string line in lines.Skip(1))
+    {
+        string[] parts = line.Split(',');
+
+        try
+        {
+            var product = new Product(
+                sku: parts[0],
+                name: parts[1],
+                unitPrice: decimal.Parse(parts[2], CultureInfo.InvariantCulture),
+                stockQuantity: int.Parse(parts[3]),
+                isActive: bool.Parse(parts[4]),
+                category: Enum.Parse<ProductCategory>(parts[5]));
+
+            catalog[product.Sku] = product;
+            Console.WriteLine($"Imported: {product.Sku}");
+        }
+        catch (FormatException)
+        {
+            Console.WriteLine($"Skipped (bad number format): {line}");
+        }
+        catch (ArgumentException ex)
+        {
+            Console.WriteLine($"Skipped ({ex.Message}): {line}");
+        }
+    }
 }
 
 
