@@ -40,6 +40,12 @@ foreach ( var group in catalog.Values.GroupBy(p => p.Category))
     Console.WriteLine($"- {group.Key}: {group.Count()}");
 }
 
+decimal inventoryValue = catalog.Values.Sum(p => p.UnitPrice * p.StockQuantity);
+Console.WriteLine($"Inventory value: {inventoryValue:N2} TL");
+
+bool hasOutOfStock = catalog.Values.Any(p => p.StockQuantity == 0);
+Console.WriteLine($"Any out of stock: {hasOutOfStock}");
+
 var cart = new List<CartItem>();
 
 while (true)
