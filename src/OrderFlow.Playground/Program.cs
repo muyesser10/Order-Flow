@@ -38,7 +38,7 @@ List<Product> outOfStock = catalog.Values.Where(p => p.StockQuantity == 0).ToLis
 
 if (outOfStock.Count > 0)
 {
-    Console.WriteLine( "Out of stock: ");
+    Console.WriteLine("Out of stock: ");
     foreach (Product p in outOfStock)
     {
         Console.WriteLine($"- {p.Name} ");
@@ -46,7 +46,7 @@ if (outOfStock.Count > 0)
 }
 
 Console.WriteLine("Products per category: ");
-foreach ( var group in catalog.Values.GroupBy(p => p.Category))
+foreach (var group in catalog.Values.GroupBy(p => p.Category))
 {
     Console.WriteLine($"- {group.Key}: {group.Count()}");
 }
@@ -137,7 +137,15 @@ if (!string.IsNullOrWhiteSpace(discountInput))
     IDiscount? discount = FindByCode(discounts, discountInput);
     if (discount != null)
     {
-        discountAmount = discount.CalculateDiscount(subtotal);
+        string? reason = discount.GetIneligibilityReason(subtotal);
+        if (reason != null)
+        {
+            Console.WriteLine(reason);
+        }
+        else
+        {
+            discountAmount = discount.CalculateDiscount(subtotal);
+        }
     }
     else
     {
@@ -304,6 +312,7 @@ class CartItem
 interface IDiscount
 {
     decimal CalculateDiscount(decimal subtotal);
+    string? GetIneligibilityReason(decimal subtotal);
 }
 
 abstract class DiscountBase : IDiscount
@@ -315,6 +324,11 @@ abstract class DiscountBase : IDiscount
         return Math.Round(cappedDiscount, 2, MidpointRounding.AwayFromZero);
     }
     protected abstract decimal CalculateRawDiscount(decimal subtotal);
+
+    public virtual string? GetIneligibilityReason(decimal subtotal)
+    {
+        return null;
+    }
 }
 
 class PercentageDiscount : DiscountBase
@@ -358,6 +372,16 @@ class MinimumSubtotalDiscount : PercentageDiscount
         }
 
         return base.CalculateRawDiscount(subtotal);
+    }
+
+    public override string? GetIneligibilityReason(decimal subtotal)
+    {
+        if (subtotal < MinimumSubtotal)
+        {
+            return $"This code is valid for orders of {MinimumSubtotal:N2} TL or more.";
+        }
+
+        return null;
     }
 
 }
