@@ -5,7 +5,8 @@ var catalog = new Dictionary<string, Product>(StringComparer.OrdinalIgnoreCase)
     ["COF-001"] = new Product(sku: "COF-001", name: "Filter Coffee", unitPrice: 189.90m, stockQuantity: 42, isActive: true, category: ProductCategory.Coffee),
     ["TEA-001"] = new Product(sku: "TEA-001", name: "Green Tea", unitPrice: 64.50m, stockQuantity: 10, isActive: true, category: ProductCategory.Tea),
     ["CRO-001"] = new Product(sku: "CRO-001", name: "Croissant", unitPrice: 45.00m, stockQuantity: 0, isActive: true, category: ProductCategory.Bakery),
-    ["MUG-001"] = new Product(sku: "MUG-001", name: "Ceramic Mug", unitPrice: 249.00m, stockQuantity: 5, isActive: false, category: ProductCategory.Merchandise)
+    ["MUG-001"] = new Product(sku: "MUG-001", name: "Ceramic Mug", unitPrice: 249.00m, stockQuantity: 5, isActive: false, category: ProductCategory.Merchandise),
+    ["ESP-001"] = new Product(sku: "ESP-001", name: "Espresso Beans", unitPrice: 279.00m, stockQuantity: 15, isActive: true, category: ProductCategory.Coffee)
 };
 
 var discounts = new Dictionary<string, IDiscount>(StringComparer.OrdinalIgnoreCase)
@@ -17,9 +18,26 @@ var discounts = new Dictionary<string, IDiscount>(StringComparer.OrdinalIgnoreCa
 
 Console.WriteLine("====Catalog====");
 
-foreach (Product product in catalog.Values)
+foreach (Product product in catalog.Values.OrderByDescending(p => p.UnitPrice))
 {
     Console.WriteLine(product.GetDisplayText());
+}
+
+List<Product> outOfStock = catalog.Values.Where(p => p.StockQuantity == 0).ToList();
+
+if (outOfStock.Count > 0)
+{
+    Console.WriteLine( "Out of stock: ");
+    foreach (Product p in outOfStock)
+    {
+        Console.WriteLine($"- {p.Name} ");
+    }
+}
+
+Console.WriteLine("Products per category: ");
+foreach ( var group in catalog.Values.GroupBy(p => p.Category))
+{
+    Console.WriteLine($"- {group.Key}: {group.Count()}");
 }
 
 var cart = new List<CartItem>();
