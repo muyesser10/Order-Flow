@@ -21,7 +21,8 @@ var discounts = new Dictionary<string, IDiscount>(StringComparer.OrdinalIgnoreCa
 
 try
 {
-    await ImportProductsAsync("products.csv", catalog);
+    string supplierFile = Path.Combine(AppContext.BaseDirectory, "products.csv");
+    await ImportProductsAsync(supplierFile, catalog);
 }
 catch (FileNotFoundException)
 {
