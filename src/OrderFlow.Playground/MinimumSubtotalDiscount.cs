@@ -1,3 +1,4 @@
+namespace OrderFlow.Playground;
 class MinimumSubtotalDiscount : PercentageDiscount
 {
     public decimal MinimumSubtotal { get; }

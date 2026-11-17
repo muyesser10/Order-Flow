@@ -1,3 +1,4 @@
+namespace OrderFlow.Playground;
 interface IDiscount
 {
     decimal CalculateDiscount(decimal subtotal);

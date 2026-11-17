@@ -1,3 +1,5 @@
+namespace OrderFlow.Playground;
+
 class FixedAmountDiscount : DiscountBase
 {
     public decimal Amount { get; }

@@ -1,3 +1,4 @@
+namespace OrderFlow.Playground;
 class PercentageDiscount : DiscountBase
 {
     public decimal Rate { get; }

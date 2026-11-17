@@ -1,3 +1,4 @@
+namespace OrderFlow.Playground;
 abstract class DiscountBase : IDiscount
 {
     public decimal CalculateDiscount(decimal subtotal)
