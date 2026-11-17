@@ -1,21 +1,64 @@
-﻿const decimal VatRate = 0.20m;
-const string WelcomeCode = "WELCOME10";
-const decimal WelcomeDiscountRate = 0.10m;
+﻿using System.Globalization;
+using OrderFlow.Playground;
+
+const decimal VatRate = 0.20m;
 
 var catalog = new Dictionary<string, Product>(StringComparer.OrdinalIgnoreCase)
 {
-    ["COF-001"] = new Product { Sku = "COF-001", Name = "Filter Coffee", UnitPrice = 189.90m, StockQuantity = 42, IsActive = true },
-    ["TEA-001"] = new Product { Sku = "TEA-001", Name = "Green Tea", UnitPrice = 64.50m, StockQuantity = 10, IsActive = true },
-    ["CRO-001"] = new Product { Sku = "CRO-001", Name = "Croissant", UnitPrice = 45.00m, StockQuantity = 0, IsActive = true },
-    ["MUG-001"] = new Product { Sku = "MUG-001", Name = "Ceramic Mug", UnitPrice = 249.00m, StockQuantity = 5, IsActive = false }
+    ["COF-001"] = new Product(sku: "COF-001", name: "Filter Coffee", unitPrice: 189.90m, stockQuantity: 42, isActive: true, category: ProductCategory.Coffee),
+    ["TEA-001"] = new Product(sku: "TEA-001", name: "Green Tea", unitPrice: 64.50m, stockQuantity: 10, isActive: true, category: ProductCategory.Tea),
+    ["CRO-001"] = new Product(sku: "CRO-001", name: "Croissant", unitPrice: 45.00m, stockQuantity: 0, isActive: true, category: ProductCategory.Bakery),
+    ["MUG-001"] = new Product(sku: "MUG-001", name: "Ceramic Mug", unitPrice: 249.00m, stockQuantity: 5, isActive: false, category: ProductCategory.Merchandise),
+    ["ESP-001"] = new Product(sku: "ESP-001", name: "Espresso Beans", unitPrice: 279.00m, stockQuantity: 15, isActive: true, category: ProductCategory.Coffee)
 };
+
+var discounts = new Dictionary<string, IDiscount>(StringComparer.OrdinalIgnoreCase)
+{
+    ["WELCOME10"] = new PercentageDiscount(0.10m),
+    ["FLAT50"] = new FixedAmountDiscount(50m),
+    ["BIG20"] = new MinimumSubtotalDiscount(0.20m, 1000m),
+    ["CAP25"] = new CappedPercentageDiscount(0.25m,100m)
+};
+
+try
+{
+    string supplierFile = Path.Combine(AppContext.BaseDirectory, "products.csv");
+    await ImportProductsAsync(supplierFile, catalog);
+}
+catch (FileNotFoundException)
+{
+    Console.WriteLine("Supplier file not found. Continuing with the existing catalog.");
+}
 
 Console.WriteLine("====Catalog====");
 
-foreach (Product product in catalog.Values)
+foreach (Product product in catalog.Values.OrderByDescending(p => p.UnitPrice))
 {
-    Console.WriteLine($"SKU: {product.Sku}, Name: {product.Name}, Price: {product.UnitPrice:N2} TL, Stock: {product.StockQuantity}");
+    Console.WriteLine(product.GetDisplayText());
 }
+
+List<Product> outOfStock = catalog.Values.Where(p => p.StockQuantity == 0).ToList();
+
+if (outOfStock.Count > 0)
+{
+    Console.WriteLine("Out of stock: ");
+    foreach (Product p in outOfStock)
+    {
+        Console.WriteLine($"- {p.Name} ");
+    }
+}
+
+Console.WriteLine("Products per category: ");
+foreach (var group in catalog.Values.GroupBy(p => p.Category))
+{
+    Console.WriteLine($"- {group.Key}: {group.Count()}");
+}
+
+decimal inventoryValue = catalog.Values.Sum(p => p.UnitPrice * p.StockQuantity);
+Console.WriteLine($"Inventory value: {inventoryValue:N2} TL");
+
+bool hasOutOfStock = catalog.Values.Any(p => p.StockQuantity == 0);
+Console.WriteLine($"Any out of stock: {hasOutOfStock}");
 
 var cart = new List<CartItem>();
 
@@ -29,7 +72,8 @@ while (true)
         break;
     }
 
-    if (!catalog.TryGetValue(skuInput.Trim(), out Product? product))
+    Product? product = FindByCode(catalog, skuInput);
+    if (product == null)
     {
         Console.WriteLine("Product not found.");
         continue;
@@ -55,14 +99,13 @@ while (true)
         continue;
     }
 
-    if (quantity > product.StockQuantity)
+    if (!product.TryDecreaseStock(quantity))
     {
         Console.WriteLine($"Insufficient stock. Available quantity: {product.StockQuantity}");
         continue;
     }
 
-    cart.Add(new CartItem { Product = product, Quantity = quantity });
-    product.StockQuantity -= quantity;
+    cart.Add(new CartItem(product, quantity));
     Console.WriteLine($"Added: {quantity} x {product.Name}");
 
 }
@@ -74,68 +117,120 @@ if (cart.Count == 0)
 }
 
 Console.WriteLine("===Your Cart===");
-decimal subtotal = 0m;
+
 
 for (int i = 0; i < cart.Count; i++)
 {
     CartItem cartItem = cart[i];
-    decimal lineTotal = cartItem.Product.UnitPrice * cartItem.Quantity;
-    subtotal += lineTotal;
+    decimal lineTotal = cartItem.LineTotal;
     Console.WriteLine($"{i + 1}. {cartItem.Product.Name} - {cartItem.Quantity} x {cartItem.Product.UnitPrice:N2} TL = {lineTotal:N2} TL");
 }
+
+decimal subtotal = cart.Sum(item => item.LineTotal);
 
 Console.WriteLine($"Subtotal: {subtotal:N2} TL");
 
 Console.Write("Discount code (press Enter to skip): ");
 string? discountInput = Console.ReadLine();
 
-decimal discountRate;
-if (string.IsNullOrWhiteSpace(discountInput))
-{
-    discountRate = 0m;
-}
-else if (string.Equals(discountInput.Trim(), WelcomeCode, StringComparison.OrdinalIgnoreCase))
-{
-    discountRate = WelcomeDiscountRate;
-}
-else
-{
-    Console.WriteLine("Invalid discount code. No discount applied.");
-    discountRate = 0m;
-}
+decimal discountAmount = 0m;
 
-decimal discountAmount = Math.Round(subtotal * discountRate, 2, MidpointRounding.AwayFromZero);
-decimal discountedSubtotal = subtotal - discountAmount;
-
-decimal shippingFee = discountedSubtotal switch
+if (!string.IsNullOrWhiteSpace(discountInput))
 {
-    >= 1000 => 0m,
-    >= 500 => 29.90m,
-    _ => 49.90m
-};
-
-decimal vatAmount = Math.Round(discountedSubtotal * VatRate, 2, MidpointRounding.AwayFromZero);
-decimal total = discountedSubtotal + shippingFee + vatAmount;
+    IDiscount? discount = FindByCode(discounts, discountInput);
+    if (discount != null)
+    {
+        string? reason = discount.GetIneligibilityReason(subtotal);
+        if (reason != null)
+        {
+            Console.WriteLine(reason);
+        }
+        else
+        {
+            discountAmount = discount.CalculateDiscount(subtotal);
+        }
+    }
+    else
+    {
+        Console.WriteLine("Invalid discount code. No discount applied.");
+    }
+}
+CheckoutSummary summary = CalculateCheckout(subtotal, discountAmount);
 
 if (discountAmount > 0)
 {
-    Console.WriteLine($"Discount: -{discountAmount:N2} TL");
+    Console.WriteLine($"Discount: -{summary.Discount:N2} TL");
 }
-Console.WriteLine($"Shipping Fee: {shippingFee:N2} TL");
-Console.WriteLine($"VAT ({VatRate:P0}): {vatAmount:N2} TL");
-Console.WriteLine($"Total: {total:N2} TL");
+PrintMoneyLine("Shipping Fee", summary.ShippingFee);
+Console.WriteLine($"VAT ({VatRate:P0}): {summary.Vat:N2} TL");
+PrintMoneyLine("Total", summary.Total);
 
-class Product
+
+decimal CalculateVat(decimal amount)
 {
-    public string Sku { get; set; } = "";
-    public string Name { get; set; } = "";
-    public decimal UnitPrice { get; set; }
-    public int StockQuantity { get; set; }
-    public bool IsActive { get; set; }
+    return Math.Round(amount * VatRate, 2, MidpointRounding.AwayFromZero);
 }
 
-class CartItem
+T? FindByCode<T>(Dictionary<string, T> source, string input) where T : class
 {
-    public Product Product { get; set; } = null!;
-    public int Quantity { get; set; }
+    if (source.TryGetValue(input.Trim(), out T? value))
+    {
+        return value;
+    }
+
+    return null;
+}
+
+async Task ImportProductsAsync(string path, Dictionary<string, Product> catalog)
+{
+    string[] lines = await File.ReadAllLinesAsync(path);
+
+    foreach (string line in lines.Skip(1))
+    {
+        string[] parts = line.Split(',');
+
+        try
+        {
+            var product = new Product(
+                sku: parts[0],
+                name: parts[1],
+                unitPrice: decimal.Parse(parts[2], CultureInfo.InvariantCulture),
+                stockQuantity: int.Parse(parts[3]),
+                isActive: bool.Parse(parts[4]),
+                category: Enum.Parse<ProductCategory>(parts[5]));
+
+            catalog[product.Sku] = product;
+            Console.WriteLine($"Imported: {product.Sku}");
+        }
+        catch (FormatException)
+        {
+            Console.WriteLine($"Skipped (bad number format): {line}");
+        }
+        catch (ArgumentException ex)
+        {
+            Console.WriteLine($"Skipped ({ex.Message}): {line}");
+        }
+    }
+}
+
+
+void PrintMoneyLine(string label, decimal amount)
+{
+    Console.WriteLine($"{label}: {amount:N2} TL");
+}
+
+CheckoutSummary CalculateCheckout(decimal subtotal, decimal discountAmount)
+{
+    decimal discountedSubtotal = subtotal - discountAmount;
+
+    decimal shippingFee = discountedSubtotal switch
+    {
+        >= 1000 => 0m,
+        >= 500 => 29.90m,
+        _ => 49.90m
+    };
+
+    decimal vatAmount = CalculateVat(discountedSubtotal);
+
+    return new CheckoutSummary(subtotal, discountAmount, shippingFee, vatAmount);
 }
