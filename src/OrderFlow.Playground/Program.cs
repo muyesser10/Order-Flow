@@ -16,7 +16,8 @@ var discounts = new Dictionary<string, IDiscount>(StringComparer.OrdinalIgnoreCa
 {
     ["WELCOME10"] = new PercentageDiscount(0.10m),
     ["FLAT50"] = new FixedAmountDiscount(50m),
-    ["BIG20"] = new MinimumSubtotalDiscount(0.20m, 1000m)
+    ["BIG20"] = new MinimumSubtotalDiscount(0.20m, 1000m),
+    ["CAP25"] = new CappedPercentageDiscount(0.25m,100m)
 };
 
 try
